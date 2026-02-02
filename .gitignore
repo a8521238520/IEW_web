@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# venv
+.venv/
+venv/
+ENV/
+
+# Flask / runtime
+instance/
+*.log
+
+# Uploads & generated files
+uploads/
+static/generated/
+
+# Secrets / keys / certs
+*.pem
+.env
+
+# OS
+.DS_Store
+Thumbs.db

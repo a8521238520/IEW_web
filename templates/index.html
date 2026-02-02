@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>我的心情日記</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <script>
+    window.DIARY_DATA = {{ diary_entries | tojson | safe }};
+    // 接收後端傳來的 view 參數，預設為 'welcome'
+    // 如果是從 app.py 儲存後導回，這裡會是 'home'
+    window.START_VIEW = "{{ request.args.get('view', 'welcome') }}";
+  </script>
+
+  <script defer src="{{ url_for('static', filename='script.js') }}"></script>
+</head>
+
+<body>
+
+  {% set total = diary_entries|length %}
+  {% set goal_total = 9 %}
+  {% set group_goal = 3 %}
+  {% set groups = 3 %}
+
+  <main class="app loading">
+
+    <section class="screen" id="screen-user-input">
+      <div class="card welcome-card">
+        <div class="welcome-center">
+          <div class="welcome-logo">
+            <div class="welcome-mark" aria-hidden="true">
+              ✒️
+              <span class="welcome-mark-dot">💛</span>
+            </div>
+            <div class="welcome-brand">iMyMEMO</div>
+            <div class="welcome-subbrand">我的心情日記</div>
+          </div>
+
+          <h1 class="welcome-title">歡迎使用心情日記</h1>
+
+          <p class="welcome-desc">
+            輸入您的使用者 ID 以開始使用<br>
+            （僅限英文、數字和底線）
+          </p>
+
+          <div class="user-input-container">
+            <input type="text" id="user-id-input" class="user-id-input" placeholder="請輸入您的 ID" maxlength="50">
+            <div id="user-id-error" class="user-id-error"></div>
+          </div>
+
+          <button class="btn primary btn-start" id="btn-submit-user">
+            確認並繼續
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-welcome">
+      <div class="card welcome-card">
+        <div class="welcome-center">
+          <div class="welcome-logo">
+            <div class="welcome-mark" aria-hidden="true">
+              ✒️
+              <span class="welcome-mark-dot">💛</span>
+            </div>
+            <div class="welcome-brand">iMyMEMO</div>
+            <div class="welcome-subbrand">我的心情日記</div>
+          </div>
+
+          <h1 class="welcome-title">書寫，是療癒的開始。</h1>
+
+          <p class="welcome-desc">
+            iMyMEMO 是一套結合情緒記錄與 AI 的個人化支持工具，<br>
+            專為癌症病友設計，陪伴您用自己的步調整理心情。
+          </p>
+
+          <button class="btn primary btn-start" id="btn-enter">
+            開始書寫
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <div id="app-content" style="display:none;">
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="flash">
+            {% for message in messages %}
+              <div class="flash-item">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <section class="screen" id="screen-home">
+        
+        <div class="card hero-card-wrapper">
+          <div class="hero-banner">
+            <h1 class="hero-title">將內心感受，轉化為前進的力量</h1>
+          </div>
+          
+          <div class="hero-separator"></div>
+          
+          <div class="hero-subtitle-area">
+            <p class="hero-subtitle-text">
+              透過三週、九篇的心情書寫引導，陪伴您慢慢整理壓力、說出平時不容易表達的感受，幫助減輕累積在心裡的負擔。<br>
+              在這個過程中，您可以重新看見自己的力量，找回屬於自己的意義與前進方向。
+            </p>
+          </div>
+        </div>
+
+        <div class="card transparent-card home-container"> 
+          
+          <div class="home-header">
+             <h2>開始書寫</h2>
+             <div class="header-separator"></div>
+             <p class="muted">請點選下方圓圈，選擇要寫哪一天的日記（黃色代表已完成，可再次點擊編輯）。</p>
+          </div>
+
+          {% set week_icons = ["🧠", "🚪", "🌱"] %}
+          {% set week_themes = ["認知重估", "情緒揭露", "正向思考"] %}
+          {% set week_descs = [
+            "探索癌症壓力的主要來源及應對策略，增進重新詮釋壓力事件的能力。",
+            "探索乳癌經驗中的深刻情緒與重要想法，促進情感的釋放與壓力的紓解。",
+            "發覺積極面向，書寫從創傷壓力中獲得的力量、啟發與支持，促進成長。"
+          ] %}
+
+          <div class="weeks-container">
+            {% for g in range(groups) %}
+              <div class="week-column">
+                
+                <div class="week-visual-card">
+                  <div class="week-icon-large">{{ week_icons[g] }}</div>
+                  <div class="week-text-group">
+                    <div class="week-label">第 {{ ['一', '二', '三'][g] }} 週：<span class="theme-bold">{{ week_themes[g] }}</span></div>
+                    <div class="week-desc-text">
+                      {{ week_descs[g] }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card day-card-wrapper">
+                  <div class="week-days-row">
+                    {% for i in range(1, group_goal + 1) %}
+                      {% set idx = g * group_goal + i %}
+                      <button
+                        type="button"
+                        class="day-circle {{ 'done' if idx|string in diary_entries else '' }}"
+                        data-day="{{ idx }}"
+                      >
+                        <span class="circle-label">第{{ i }}天</span>
+                        <span class="circle-sub">Day{{ idx }}</span>
+                      </button>
+                    {% endfor %}
+                  </div>
+                </div>
+
+              </div>
+            {% endfor %}
+          </div>
+
+          <div class="progress-section card">
+            <div class="progress-strip">
+              <div class="progress-main">
+                達成進度：
+                <span class="count">{{ total }}</span> / {{ goal_total }} 篇
+                <span class="sep">•</span>
+                {% if total < goal_total %}
+                  還差 <span class="count">{{ goal_total - total }}</span> 篇
+                {% else %}
+                  <span class="ok">已完成 ✅</span>
+                {% endif %}
+              </div>
+              <div class="progress-hint">
+                小提醒：寫作時不需要在意文法或完整性，想到什麼就寫什麼。
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <section class="screen" id="screen-mode">
+        <div class="card">
+          <div class="mode-header-group">
+            <h2>DAY<span id="ui-day-number">1</span>：當癌症找到我時...</h2>
+          </div>
+
+          <div class="prominent-guide-box">
+            <h3 class="guide-prompt-header">今日邀請您書寫的主題為「當癌症找到我時…」，您可以放心寫下所有跟醫師告知我確診當下的所有感受與想法，說出你最感到有壓力或害怕的事，或是讓你最再感受的畫面和想法。用寫的或是說的都可以，沒有對錯，也不需要很完整。如果寫到一半有某些讓您無法繼續寫的原因，停下來也沒關係。</h3>
+            <div class="guide-prompt-content">
+              以下有三種書寫心情日記的方法，選擇您喜歡的方式按下按鍵，即可進入該頁面。
+            </div>
+          </div>
+
+          <div class="modes-grid">
+            <button type="button" class="mode-tile" data-mode="voice">
+              <div class="tile-icon">🎙️</div>
+              <div class="tile-title">語音輸入</div>
+              <div class="tile-desc-multi">① 按下錄音按鈕 → ② 轉成文字</div>
+            </button>
+
+            <button type="button" class="mode-tile" data-mode="ocr">
+              <div class="tile-icon">📷</div>
+              <div class="tile-title">手寫拍照上傳</div>
+              <div class="tile-desc-multi">① 在紙上書寫日記 → ② 拍照 → ③ 上傳</div>
+            </button>
+
+            <button type="button" class="mode-tile" data-mode="typing">
+              <div class="tile-icon">⌨️</div>
+              <div class="tile-title">打字輸入</div>
+              <div class="tile-desc-multi">① 按下打字輸入按鈕 → ② 於文字欄中輸入文字</div>
+            </button>
+          </div>
+
+          <div class="nav-row">
+            <button type="button" class="btn ghost" data-nav="back-home">← 回上一頁</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-write" aria-label="書寫日記">
+        <div class="card">
+          <div class="card-header">
+            <h2>DAY<span id="ui-day-number-write">1</span>：當癌症找到我時...</h2>
+          </div>
+
+          <div class="write-controls-container">
+            
+            <div class="control-card-wrapper" id="voice-controls">
+              <button
+                type="button"
+                id="mic-btn"
+                class="mic-circle-btn mic-idle"
+                aria-label="語音輸入"
+                title="點擊開始錄音"
+              >
+                <div class="mic-icon-main">🎙️</div>
+              </button>
+              <div class="control-card-label">語音輸入</div>
+              <div class="control-card-sub">點擊錄音/停止</div>
+              <div id="mic-status" class="status-text single-line"></div>
+            </div>
+
+            <div class="control-card-wrapper" id="ocr-controls" style="display:none;">
+              <button type="button" id="ocr-btn" class="mic-circle-btn">
+                <div class="mic-icon-main">📷</div>
+              </button>
+              <div class="control-card-label">拍照上傳</div>
+              <div class="control-card-sub">點擊選擇照片</div>
+              <input type="file" id="ocr-input" accept="image/*" style="display:none;">
+              <div id="ocr-status" class="status-text single-line"></div>
+            </div>
+
+            <div class="control-card-wrapper" id="typing-controls" style="display:none;">
+              <div class="mic-circle-btn static-icon">
+                <div class="mic-icon-main">⌨️</div>
+              </div>
+              <div class="control-card-label">打字輸入</div>
+            </div>
+
+            <div class="write-instruction-card" id="ui-instruction-text">
+              您將有15分鐘的時間進行心情日記的錄音書寫，系統會在您開始錄音時進行倒數計時。當時間剩下最後 30 秒時，系統會貼心提醒您可以將錄音進行收尾。
+            </div>
+
+            <div class="timer-badge vertical-layout timer-card">
+              <div class="hourglass" id="hourglass" title="15 分鐘倒數">
+                <div class="top"></div>
+                <div class="bottom"></div>
+              </div>
+              <div class="timer-meta">
+                <div id="timer-display" class="timer-time">15:00</div>
+                <button id="timer-toggle" type="button" class="btn tiny timer-btn" style="display:none;">暫停計時</button>
+              </div>
+            </div>
+
+          </div>
+
+          <form method="POST" action="{{ url_for('index') }}" id="diary-form" class="diary-form">
+            <input type="hidden" name="day_index" id="day_index" value="">
+            <input type="hidden" name="mode" id="mode" value="">
+            <input type="hidden" name="date" id="date" value="">
+
+            <div class="textarea-wrap">
+              <textarea
+                id="diary_text"
+                name="diary_text"
+                form="diary-form"
+                rows="16"
+                placeholder="當醫生告訴我我得到癌症時......&#10;&#10;我聽到當下的反應是......&#10;&#10;當下我最在意或反覆出現在腦中的事情是......"
+              ></textarea>
+              <div class="helper">
+                <span>提示：語音 / OCR 辨識結果會自動填入，您也可以手動修改。</span>
+              </div>
+            </div>
+
+            <div class="nav-row">
+              <button type="button" class="btn ghost" data-nav="back-mode">← 重新選擇模式</button>
+              <button type="button" class="btn primary" id="btn-next-review">書寫完成，下一步 →</button>
+            </div>
+          </form>
+
+        </div>
+      </section>
+
+      <section class="screen" id="screen-review" aria-label="核對內容">
+        <div class="card">
+          <div class="card-header">
+            <h2>Day<span id="ui-day-number-review">1</span>：核對內容</h2>
+          </div>
+
+          <div class="write-controls-container">
+            
+            <div class="control-card-wrapper">
+              <div class="mic-circle-btn static-icon review-icon-bg">
+                <div class="mic-icon-main">✔</div>
+              </div>
+              <div class="control-card-label">內容校正</div>
+              <div class="control-card-sub">確認文字是否準確</div>
+            </div>
+
+            <div class="write-instruction-card">
+              請您確認剛剛錄音的文字是否跟您真正想表達的想法一樣。如果有錯字、漏字等需要修正的地方，都可以直接在下方文字欄做修改、補充，調整成您想要的樣子。您將有5分鐘的時間進行心情日記書寫內容的核對。當時間剩下最後 10 秒時，系統會貼心提醒您。
+            </div>
+
+            <div class="timer-badge vertical-layout timer-card">
+              <div class="hourglass small" id="hourglass-review" title="5 分鐘倒數">
+                <div class="top"></div>
+                <div class="bottom"></div>
+              </div>
+              <div class="timer-meta">
+                <div id="timer-display-review" class="timer-time">05:00</div>
+                <button id="timer-toggle-review" type="button" class="btn tiny timer-btn">開始計時</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="review-split is-single" id="review-split">
+            <div class="review-left">
+              <div id="review-mount"></div>
+            </div>
+
+            <div class="review-right" aria-label="手寫圖片預覽">
+              <div class="review-image-card">
+                <div class="review-image-title">您上傳的手寫圖片</div>
+                <div class="review-image-hint" id="review-ocr-empty">（尚未選擇圖片）</div>
+                <img id="review-ocr-image" class="review-image" alt="手寫上傳圖片預覽" style="display:none;">
+                <div class="review-image-hint">提示：點擊圖片可放大查看</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="nav-row">
+            <button type="button" class="btn ghost" data-nav="back-write">← 回到上一頁</button>
+            <button type="submit" class="btn primary" form="diary-form" id="btn-submit">我已檢查完成，送出 →</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-wordcloud" aria-label="文字雲結果">
+        <div class="card">
+          <h1>Day{{ request.args.get('day','') }}：文字雲結果</h1>
+
+          <p class="muted" style="line-height:1.8; margin-top:10px;">
+            {{ wc_msg }}
+          </p>
+
+          <div style="margin-top: 16px;">
+            {% if wc_img %}
+              <img
+                src="{{ url_for('static', filename=wc_img) }}"
+                alt="wordcloud"
+                style="width:100%; border-radius:18px;"
+              >
+            {% else %}
+              <div class="muted">尚未產生文字雲</div>
+            {% endif %}
+          </div>
+
+          <div class="nav-row" style="margin-top:18px; justify-content: space-between;">
+            <button type="button" class="btn ghost" data-nav="back-home">← 回首頁</button>
+            <button type="button" class="btn primary" data-nav="next-sentiment">下一步 →</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-sentiment" aria-label="正負面詞彙統整">
+        <div class="card">
+          <h1>Day{{ request.args.get('day','') }}：正負面詞彙統整</h1>
+
+          <p class="muted" style="line-height:1.8; margin-top:10px;">
+            根據您剛剛寫下的內容，系統整理出文章中出現的情緒相關詞語與次數，讓您回頭看看哪些感受較常出現。
+          </p>
+
+          <div style="display:flex; gap:18px; margin-top:16px; flex-wrap:wrap;">
+            <div class="card" style="flex:1; min-width:260px;">
+              <h3 style="margin-bottom:10px;">正向詞語</h3>
+              {% if pos_items and pos_items|length > 0 %}
+                <ul style="margin:0; padding-left:18px; line-height:1.9;">
+                  {% for it in pos_items %}
+                    <li>{{ it.word }}（{{ it.count }}次）</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <div class="muted">（本篇未偵測到正向詞語）</div>
+              {% endif %}
+            </div>
+
+            <div class="card" style="flex:1; min-width:260px;">
+              <h3 style="margin-bottom:10px;">負向詞語</h3>
+              {% if neg_items and neg_items|length > 0 %}
+                <ul style="margin:0; padding-left:18px; line-height:1.9;">
+                  {% for it in neg_items %}
+                    <li>{{ it.word }}（{{ it.count }}次）</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <div class="muted">（本篇未偵測到負向詞語）</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="nav-row" style="margin-top:18px; justify-content: space-between;">
+            <button type="button" class="btn ghost" data-nav="back-wordcloud">← 上一步</button>
+            <button type="button" class="btn primary" data-nav="next-feedback">下一步 →</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-feedback" aria-label="書寫後回饋問卷">
+        <div class="card">
+          <div class="prominent-guide-box">
+            <h3 class="guide-prompt-header">
+              在完成這次書寫後，請花一點時間想想，這段日記對您帶來了什麼樣的感受，
+              並回答下面兩個問題，幫助我們更了解您的書寫經驗。
+            </h3>
+          </div>
+
+          <div class="card" style="margin-top:16px;">
+            <h3 style="margin-bottom:10px;">1️⃣ 整體來說，這次書寫對您有多少幫助呢？</h3>
+            <p class="muted">請用 0 到 10 分來表示（0 分代表完全沒有幫助，10 分代表非常有幫助）</p>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+              {% for i in range(11) %}
+                <label style="display:flex; flex-direction:column; align-items:center; width:48px;">
+                  <div>{{ i }}</div>
+                  <input type="radio" name="q1_score" value="{{ i }}">
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:16px;">
+            <h3 style="margin-bottom:10px;">2️⃣ 今天的日記中，有寫到您曾經最在意、最牽掛的事情嗎？</h3>
+            <p class="muted">（例如：一直放在心裡的想法、讓您放心不下的事）</p>
+
+            <div style="display:flex; gap:16px; margin-top:12px;">
+              <label style="display:flex; align-items:center; gap:8px;">
+                <input type="radio" name="q2_yesno" value="yes"> 是
+              </label>
+              <label style="display:flex; align-items:center; gap:8px;">
+                <input type="radio" name="q2_yesno" value="no"> 否
+              </label>
+            </div>
+          </div>
+
+          <div class="nav-row" style="margin-top:18px; justify-content: space-between;">
+            <button type="button" class="btn ghost" data-nav="back-sentiment">← 上一步</button>
+            <button type="button" class="btn primary" data-nav="finish-feedback">完成 →</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-encouragement" aria-label="生成式鼓勵">
+        <div class="card">
+          <h1>Day{{ request.args.get('day','') }}：當癌症找到我時...</h1>
+          
+          <div class="prominent-guide-box" style="background: rgba(255, 255, 255, 0.8);">
+            <p class="guide-prompt-content">
+              謝謝您今天願意把心裡的事情寫下來，這本身就很不容易。根據您剛剛寫下的內容，我們想和您分享一段話，陪您一起看看這段經驗……
+            </p>
+          </div>
+
+          <div class="review-split">
+            <div class="review-left">
+              <div class="encouragement-text-box">
+                <p style="font-size: 1.2rem; font-weight: 700; color: #7a5c3a; line-height: 2;">
+                  「您不是因為不害怕才撐下來，而是因為即使害怕，您仍然選擇向前。」
+                </p>
+                <br>
+                <p style="font-size: 1.2rem; font-weight: 700; color: #7a5c3a; line-height: 2;">
+                  「這些您寫下的過程都是您真實走過的證明，沒有一刻是白費的。」
+                </p>
+              </div>
+            </div>
+
+            <div class="review-right">
+              <div class="review-image-card">
+                <div class="review-image-title">意象圖</div>
+                <img src="{{ url_for('static', filename='images/kintsugi.jpg') }}" class="review-image" alt="意象圖">
+              </div>
+            </div>
+          </div>
+
+          <div class="nav-row" style="margin-top:24px; justify-content: center;">
+            <button type="button" class="btn primary btn-start" data-nav="back-home">回首頁</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <div id="instruction-modal" class="modal-overlay">
+      <div class="modal-card fade-in-up">
+        <div class="modal-decor-bg"></div>
+
+        <div class="modal-content">
+          <div class="instruction-group">
+            <div class="instruction-text">
+              <p>
+                每個人都有自己<span class="highlight-text">專屬的空間</span>，讓您書寫內心的故事。<br>
+                內容只有您與照護團隊會看到，我們會為您<span class="highlight-text">守護您的秘密</span>。
+              </p>
+            </div>
+          </div>
+
+          <div class="instruction-group">
+            <div class="instruction-text">
+              <p>
+                在開始之前，請為自己找一個<span class="highlight-text">安靜、舒服</span>，沒有人打擾的角落。<br>
+                每天給自己 <span class="highlight-text big">20分鐘</span> 的時間來書寫一份日記。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-action">
+          <button type="button" id="btn-enter-diary" class="btn-circle-action">
+            <span class="action-label">點擊進入</span>
+            <span class="action-sub">書寫心情日記</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <div id="loading-overlay" class="loading-overlay" style="display:none;">
+    <div class="loading-card fade-in-up">
+      <div class="loading-icon" aria-hidden="true">
+        <div class="loading-spinner"></div>
+        <div class="loading-dot"></div>
+      </div>
+
+      <div class="loading-title">正在分析文章…</div>
+      <div class="loading-desc">正在生成文字雲，請稍候</div>
+      <div class="loading-hint">提示：頁面跳轉後會自動顯示結果</div>
+    </div>
+  </div>
+
+</body>
+</html>
