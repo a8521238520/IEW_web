@@ -446,7 +446,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const timerToggleReview = $("#timer-toggle-review");
   const hourglassReview = $("#hourglass-review");
 
-  const WRITE_TOTAL = 15 * 60;
+  const WRITE_TOTAL = 10 * 60;
   const REVIEW_TOTAL = 5 * 60;
 
   let writeRemaining = WRITE_TOTAL;
