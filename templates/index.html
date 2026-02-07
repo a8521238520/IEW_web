@@ -20,9 +20,9 @@
 <body>
 
   {% set total = diary_entries|length %}
-  {% set goal_total = 9 %}
-  {% set group_goal = 3 %}
-  {% set groups = 3 %}
+  {% set goal_total = 1 %}
+  {% set group_goal = 1 %}
+  {% set groups = 1 %}
 
   <main class="app loading">
 
@@ -73,7 +73,7 @@
 
           <p class="welcome-desc">
             iMyMEMO 是一套結合情緒記錄與 AI 的個人化支持工具，<br>
-            專為癌症病友設計，陪伴您用自己的步調整理心情。
+            可以用AI來幫忙梳理我的心情！，陪伴您用自己的步調整理心情。
           </p>
 
           <button class="btn primary btn-start" id="btn-enter">
@@ -106,8 +106,8 @@
           
           <div class="hero-subtitle-area">
             <p class="hero-subtitle-text">
-              透過三週、九篇的心情書寫引導，陪伴您慢慢整理壓力、說出平時不容易表達的感受，幫助減輕累積在心裡的負擔。<br>
-              在這個過程中，您可以重新看見自己的力量，找回屬於自己的意義與前進方向。
+              在忙碌的生活步調中可能累加許多情緒藏匿在心中，現在邀請你回想最近感到blue的那天的點點滴滴。<br>
+              讓我們用AI來幫忙梳理我的心情。
             </p>
           </div>
         </div>
@@ -121,9 +121,9 @@
           </div>
 
           {% set week_icons = ["🧠", "🚪", "🌱"] %}
-          {% set week_themes = ["認知重估", "情緒揭露", "正向思考"] %}
+          {% set week_themes = ["沉澱心情", "情緒揭露", "正向思考"] %}
           {% set week_descs = [
-            "探索癌症壓力的主要來源及應對策略，增進重新詮釋壓力事件的能力。",
+            "探索高中生活壓力的主要來源及心情反應，增進重新詮釋挫折的能力。",
             "探索乳癌經驗中的深刻情緒與重要想法，促進情感的釋放與壓力的紓解。",
             "發覺積極面向，書寫從創傷壓力中獲得的力量、啟發與支持，促進成長。"
           ] %}
@@ -142,7 +142,7 @@
                   </div>
                 </div>
 
-                <div class="card day-card-wrapper">
+                <div class="card day-card-wrapper {{ 'is-single' if group_goal == 1 else '' }}">
                   <div class="week-days-row">
                     {% for i in range(1, group_goal + 1) %}
                       {% set idx = g * group_goal + i %}
@@ -186,11 +186,11 @@
       <section class="screen" id="screen-mode">
         <div class="card">
           <div class="mode-header-group">
-            <h2>DAY<span id="ui-day-number">1</span>：當癌症找到我時...</h2>
+            <h2>DAY<span id="ui-day-number">1</span>：Blue Moment的回顧</h2>
           </div>
 
           <div class="prominent-guide-box">
-            <h3 class="guide-prompt-header">今日邀請您書寫的主題為「當癌症找到我時…」，您可以放心寫下所有跟醫師告知我確診當下的所有感受與想法，說出你最感到有壓力或害怕的事，或是讓你最再感受的畫面和想法。用寫的或是說的都可以，沒有對錯，也不需要很完整。如果寫到一半有某些讓您無法繼續寫的原因，停下來也沒關係。</h3>
+            <h3 class="guide-prompt-header">請你花10分鐘回憶一段在高中時所經歷的blue monment，可能是一段學業不順、未來志願選擇困難、愛情碰壁、不被家人理解…，透過這篇的心情書寫，將陪伴您整理出自己的壓力、找到轉化和調整的力量。</h3>
             <div class="guide-prompt-content">
               以下有三種書寫心情日記的方法，選擇您喜歡的方式按下按鍵，即可進入該頁面。
             </div>
@@ -225,7 +225,7 @@
       <section class="screen" id="screen-write" aria-label="書寫日記">
         <div class="card">
           <div class="card-header">
-            <h2>DAY<span id="ui-day-number-write">1</span>：當癌症找到我時...</h2>
+            <h2>DAY<span id="ui-day-number-write">1</span>：BLUE MOMENT</h2>
           </div>
 
           <div class="write-controls-container">
@@ -362,7 +362,7 @@
 
       <section class="screen" id="screen-wordcloud" aria-label="文字雲結果">
         <div class="card">
-          <h1>Day{{ request.args.get('day','') }}：文字雲結果</h1>
+          <h1>Day{{ request.args.get('day','') }}：BLUE雲結果</h1>
 
           <p class="muted" style="line-height:1.8; margin-top:10px;">
             {{ wc_msg }}
@@ -476,7 +476,7 @@
 
       <section class="screen" id="screen-encouragement" aria-label="生成式鼓勵">
         <div class="card">
-          <h1>Day{{ request.args.get('day','') }}：當癌症找到我時...</h1>
+          <h1>Day{{ request.args.get('day','') }}：BLUE MOMENT</h1>
           
           <div class="prominent-guide-box" style="background: rgba(255, 255, 255, 0.8);">
             <p class="guide-prompt-content">
